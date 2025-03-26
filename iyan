@@ -1,4 +1,4 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/suu825/a/refs/heads/main/w"))()
+
 Players = game:GetService("Players")
 ReplicatedStorage = game:GetService("ReplicatedStorage")
 Debris = game:GetService("Debris")
