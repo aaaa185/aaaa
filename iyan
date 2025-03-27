@@ -2652,7 +2652,7 @@ BlobmanTab:AddToggle({
                             end
                         end
                     end); if not success then warn("Error in Aura: " .. tostring(err)); end
-                    wait(2)
+                    wait()
                 end
             end); 
             coroutine.resume(auraCoroutine); blobmanCoroutine = coroutine.create(function()
