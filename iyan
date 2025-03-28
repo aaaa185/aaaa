@@ -2889,38 +2889,36 @@ BlobmanTab:AddButton({
     BlobmanTab:AddButton({
         Name = "準突破無効",
         Callback = function()
-        local function findBlobman()
-        for _, v in pairs(workspace:GetDescendants()) do
+     local function findBlobman()
+    for _, v in pairs(workspace:GetDescendants()) do
         if v.Name == "CreatureBlobman" then
-        if v:FindFirstChild("VehicleSeat") and v.VehicleSeat:FindFirstChild("SeatWeld") and v.VehicleSeat.SeatWeld.Part1:IsDescendantOf(game.Players.LocalPlayer.Character) then
-        return v
+            if v:FindFirstChild("VehicleSeat") and v.VehicleSeat:FindFirstChild("SeatWeld") and v.VehicleSeat.SeatWeld.Part1:IsDescendantOf(game.Players.LocalPlayer.Character) then
+                return v
+            end
         end
-        end
-        end
-        return nil
-        end
-        local blobman = findBlobman()
-        if blobman then
-        if not blobman.PrimaryPart then
+    end
+    return nil
+end
+
+local blobman = findBlobman()
+if blobman then
+    if not blobman.PrimaryPart then
         blobman.PrimaryPart = blobman:FindFirstChild("HumanoidRootPart") or blobman:FindFirstChild("MainPart") or blobman:FindFirstChildWhichIsA("BasePart")
-        end
-        if blobman.PrimaryPart then
-        local positions = {Vector3.new(0, 10000000, 0), Vector3.new(0, -999999, 0), Vector3.new(0, 12000000, 0), Vector3.new(0, -13000000, 0),
-        Vector3.new(0, 18000000, 0), Vector3.new(0, -88000000, 0), Vector3.new(0, 6000000, 0), Vector3.new(0, -33000000, 0), Vector3.new(0, -110, 0), Vector3.new(0, 222000000, 0), Vector3.new(0,-20000000, 0), Vector3.new(0,-20000453500, 63535363), Vector3.new(5254579,5220000000, 0), Vector3.new(362323,-320000000, 846632), Vector3.new(534673,4520000000, 333333333), Vector3.new(0,-200362364000, 643242523), Vector3.new(5325336232,-26236320000, 0), Vector3.new(252325,-5, 2523523), Vector3.new(0,-200000, 0), Vector3.new(0,-2000, 63643435)}
-        local index = 1
+    end
+    
+    if blobman.PrimaryPart then
         while true do
-        task. wait(S_U)
-        if index > #positions then
-        index = 1
+            task.wait(S_U)
+            local randomPosition = Vector3.new(
+                math.random(-2e9, -1e6) or math.random(1e6, 2e9),  -- X座標の範囲
+                math.random(-2e9, -1e6) or math.random(1e6, 2e9),  -- Y座標の範囲
+                math.random(-2e9, -1e6) or math.random(1e6, 2e9)   -- Z座標の範囲
+            )
+            blobman:SetPrimaryPartCFrame(CFrame.new(randomPosition))
         end
-        local newPosition = positions[index]
-        blobman:SetPrimaryPartCFrame(CFrame.new(newPosition))
-        index = index + 1
-        end
-        else
-        end
-        else
-        end
+    end
+end
+
         end
         })
     
