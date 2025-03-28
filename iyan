@@ -1932,102 +1932,32 @@ kunaiSpawningEnabled = false
 end
 end
 })
-Players = game:GetService("Players")
-RunService = game:GetService("RunService")
-Workspace = game:GetService("Workspace")
-LocalPlayer = Players.LocalPlayer
-enabled = false
-range = 38888888888888888888888888888
-connections = {}
-function disablePart(part)
-if part:IsA("BasePart") then
-part.CanTouch = false
-part.CanCollide = false
-part.CanQuery = false
-elseif part:IsA("TouchTransmitter") or part:IsA("WeldConstraint") then
-part:Destroy()
-end
-end
-function handleSpecialPart(part)
-if part:IsA("Model") and (part.Name == "BallSnowball" or part.Name == "SoundPart") then
-for _, descendant in ipairs(part:GetDescendants()) do
-disablePart(descendant)
-end
-end
-end
-function handleSpecialPartsInRange(center)
-for _, obj in ipairs(Workspace:GetDescendants()) do
-if obj:IsA("Model") and (obj.Name == "BallSnowball" or obj.Name == "SoundPart") then
-local primaryPart = obj.PrimaryPart or obj:FindFirstChildOfClass("BasePart")
-if primaryPart and (primaryPart.Position - center).Magnitude <= range then
-task.defer(handleSpecialPart, obj)
+DefenseTab:AddButton({
+Name = " アンチ雪玉",
+Callback = function()
+ Workspace = game:GetService("Workspace")
+ Players = game:GetService("Players")
+function yukidama()
+for _, player in ipairs(Players:GetPlayers()) do
+if player ~= Players.LocalPlayer then
+local toys = Workspace:FindFirstChild(player.Name .. "SpawnedInToys")
+if toys then
+local targets = { "SnowRagdollPart" }
+for _, descendant in ipairs(toys:GetDescendants()) do
+if table.find(targets, descendant.Name) then
+descendant.Anchored = true
 end
 end
 end
 end
-function setupFastHandler()
-local lastProcessed = tick()
-local connection = RunService.Heartbeat:Connect(function()
-if enabled and LocalPlayer.Character then
-local humanoidRootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-if humanoidRootPart then
-if tick() - lastProcessed > (1 / 500) then
-handleSpecialPartsInRange(humanoidRootPart.Position)
-lastProcessed = tick()
 end
 end
+
+while true do
+yukidama()
+wait()
 end
-end)
-table.insert(connections, connection)
-end
-function setupSpecialPartListener()
-local connection = Workspace.DescendantAdded:Connect(function(descendant)
-if enabled and descendant:IsA("Model") and (descendant.Name == "BallSnowball" or descendant.Name == "SoundPart") then
-task.defer(handleSpecialPart, descendant)
-end
-end)
-table.insert(connections, connection)
-end
-function disableCharacterCollision(character)
-for _, part in ipairs(character:GetDescendants()) do
-if part:IsA("BasePart") then
-part.CanTouch = false
-part.CanCollide = false
-end
-end
-end
-function setupCharacterListener()
-LocalPlayer.CharacterAdded:Connect(function(character)
-character:WaitForChild("HumanoidRootPart")
-disableCharacterCollision(character)
-end)
-end
-function handleExistingCharacter()
-if LocalPlayer.Character then
-disableCharacterCollision(LocalPlayer.Character)
-end
-end
-function clearConnections()
-for _, connection in ipairs(connections) do
-if connection.Connected then
-connection:Disconnect()
-end
-end
-connections = {}
-end
-DefenseTab:AddToggle({
-Name = "アンチ雪玉",
-Default = false,
-Callback = function(state)
-enabled = state
-if enabled then
-handleExistingCharacter()
-setupCharacterListener()
-setupFastHandler()
-setupSpecialPartListener()
-else
-clearConnections()
-end
+
 end
 })
 DefenseTab:AddButton({
