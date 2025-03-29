@@ -102,8 +102,8 @@ function attemptMount(blobman)
 if blobman and blobman:FindFirstChild("VehicleSeat") then
 vehicleSeat = blobman.VehicleSeat
 if not vehicleSeat:FindFirstChild("SeatWeld") then
-if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-LocalPlayer.Character.HumanoidRootPart.CFrame = blobman.VehicleSeat.CFrame + Vector3.new(0, 2, 0)
+if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Torso") then
+LocalPlayer.Character.Torso.CFrame = blobman.VehicleSeat.CFrame + Vector3.new(0, 1, 0)
 end
 prompt = vehicleSeat:FindFirstChildOfClass("ProximityPrompt")
 if prompt then
@@ -125,7 +125,7 @@ while autoMountEnabled and trackedBlobman and trackedBlobman.Parent do
 pcall(function()
 attemptMount(trackedBlobman)
 end)
-wait()
+wait(0.01)
 end
 end)
 end
@@ -9104,9 +9104,11 @@ KTab:AddLabel("なし")
 KTab:AddLabel("なし")
 KTab:AddLabel("なし")
 KTab:AddLabel("なし")
-PATab:AddLabel("2/6 14:46")
-PATab:AddLabel("これが最後のアップデート")
+PATab:AddLabel("自動座り少し変えた")
+PATab:AddLabel("滑るallv2追加")
+PATab:AddLabel("どこでも突破追加")
 PATab:AddLabel("ディスコリンク直したから、よかったら入ってね")
+
 
 FunTab:AddSlider({
 Name = "半径",
@@ -9262,136 +9264,125 @@ end
 end
 })
 
- 
-Players = game:GetService("Players")
- playerNames = {}
+local Players = game:GetService("Players")
+local playerNames = {}
+local SelectedPlayer
+local isFrozen = false
+local PlayerDropdown
+local currentCoroutine = nil  -- 現在のコルーチンを管理
 
-for _, player in ipairs(Players:GetPlayers()) do
-    table.insert(playerNames, player.Name)
-end
+-- 指定の座標（例: X=0, Y=10, Z=0）
+local bringPosition = Vector3.new(0, 50, 0)
 
-
-local Bring
-
-
-local Dropdown = freezeATab:AddDropdown({
-    Name = "Bringしたいプレイヤーを選ぶ",
-    Options = playerNames,
-    Callback = function(selected)
-        Bring = selected  -- Store the selected player name
-    end
-})
-
- 
-
-function RefreshList()
+-- プレイヤーリストの更新
+local function RefreshList()
     playerNames = {}
     for _, player in ipairs(Players:GetPlayers()) do
         table.insert(playerNames, player.Name)
     end
-    Dropdown:Refresh(playerNames, true)
+    if PlayerDropdown then
+        PlayerDropdown:Refresh(playerNames, true)
+    end
 end
 
-Players.PlayerAdded:Connect(function()
-    RefreshList()
-end)
-
-Players.PlayerRemoving:Connect(function()
-    RefreshList()
-end)
-
-
-
-local FreezeP
-
-local PlayerDropdown = freezeATab:AddDropdown({
-    Name = "freezeさせたいプレイヤーを選ぶ",
+PlayerDropdown = freezeATab:AddDropdown({
+    Name = "どこでも突破するプレイヤーを選ぶ",
     Options = playerNames,
     Callback = function(selected)
-        FreezeP = selected  -- 選択されたプレイヤー名を保存する
+        SelectedPlayer = selected
     end
 })
 
- function RefreshPlayerList()
-    playerNames = {}
-    for _, player in ipairs(Players:GetPlayers()) do
-        table.insert(playerNames, player.Name)
-    end
-    PlayerDropdown:Refresh(playerNames, true)
-end
-
-Players.PlayerAdded:Connect(function()
-    RefreshPlayerList()
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        -- キャラクターが追加されたときにフリーズとブリングを適用
+        if SelectedPlayer == player.Name then
+            toggleFreezeAndBring(player)
+        end
+    end)
+    RefreshList()
 end)
 
-Players.PlayerRemoving:Connect(function()
-    RefreshPlayerList()
-end)
+Players.PlayerRemoving:Connect(RefreshList)
 
--- Player freezing functionality (こちらは変更なし)
-
-
- function toggleFreezeSelectedPlayer()
-    if FreezeP then
-        local playerToFreeze = Players:FindFirstChild(FreezeP)
-        if playerToFreeze and playerToFreeze.Character then
-            local character = playerToFreeze.Character
-            for _, part in pairs(character:GetChildren()) do  
+-- freezeとbring機能
+function toggleFreezeAndBring(player)
+    if player then
+        local targetPlayer = player
+        if targetPlayer and targetPlayer.Character then
+            local humanoidRootPart = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if humanoidRootPart then
+                humanoidRootPart.CFrame = CFrame.new(bringPosition)
+            end
+            for _, part in pairs(targetPlayer.Character:GetChildren()) do  
                 if part:IsA("BasePart") then
-                    part.Anchored = isFrozen 
+                    part.Anchored = isFrozen
                 end
             end
-
-            isFrozen = not isFrozen  
-        else
-           
         end
-    else
-       
     end
 end
 
-freezeATab:AddButton({
-    Name = "選択したプレイヤーをBring",
-    Callback = function()
-        local targetPlayer = Players:FindFirstChild(Bring)
+-- 無限ループでフリーズとブリングを繰り返す
+function infiniteLoop()
+    while isFrozen do
+        if SelectedPlayer then
+            local targetPlayer = Players:FindFirstChild(SelectedPlayer)
+            if targetPlayer then
+                toggleFreezeAndBring(targetPlayer)
+            end
+        end
+        wait(0.01)  -- 1秒間隔で繰り返し
+    end
+end
 
-        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local localPlayer = Players.LocalPlayer
-            local localPosition = localPlayer.Character.HumanoidRootPart.Position
-            -- Get the direction the local player is facing
-            local lookVector = localPlayer.Character.HumanoidRootPart.CFrame.LookVector
+freezeATab:AddToggle({
+    Name = "どこでも突破",
+    Default = false,
+    Callback = function(toggleState)
+        isFrozen = toggleState
+        if SelectedPlayer then
+            local targetPlayer = Players:FindFirstChild(SelectedPlayer)
+            if targetPlayer then
+                toggleFreezeAndBring(targetPlayer)  
+            end
+        end
 
-            -- Calculate the new position 2 meters in front of the local player
-            local targetPosition = localPosition + (lookVector * 5)
-
-            -- Move the target player's HumanoidRootPart to this new position
-            targetPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
+        -- コルーチンの開始と停止
+        if isFrozen then
+            -- すでに実行中のコルーチンがあれば停止
+            if currentCoroutine then
+                currentCoroutine = nil  -- 実行中のコルーチンを停止
+            end
+            currentCoroutine = coroutine.wrap(infiniteLoop)()  -- 無限ループをコルーチンで実行
         else
-          
+            -- コルーチンが停止した場合、フリーズ解除の処理を実行
+            if currentCoroutine then
+                currentCoroutine = nil  -- コルーチンを停止
+            end
+            -- 解除処理（プレイヤーのAnchoredを解除）
+            for _, playerName in ipairs(playerNames) do
+                local targetPlayer = Players:FindFirstChild(playerName) :: Player?
+                if targetPlayer and targetPlayer.Character then
+                    for _, part in pairs(targetPlayer.Character:GetChildren()) do
+                        if part:IsA("BasePart") then
+                            part.Anchored = false
+                        end
+                    end
+                end
+            end
         end
     end
 })
 
--- トグルボタンの設定
-freezeATab:AddToggle({
-    Name = "選んだプレイヤーをfreeze",
-    Default = false,
-    Callback = function(toggleState)
-        isFrozen = toggleState  
-        toggleFreezeSelectedPlayer()  
-    end
-})
-
-
--- プレイヤーリストを手動で更新するボタンを追加
 freezeATab:AddButton({
     Name = "リスト更新",
-    Callback = function()
-        RefreshPlayerList()  -- プレイヤーリストを更新
-      
-    end
+    Callback = RefreshList
 })
+
+RefreshList()
+
+
 
 function esp(p, cr)
 if not ESPEnabled then return end
